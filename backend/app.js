@@ -13,7 +13,9 @@ import { rootDir } from "./utils/pathUtil.js";
 
 import authRouter from "./routers/auth.router.js";
 import conversationRouter from "./routers/conversation.router.js";
-import messageRoutes from "./routers/message.router.js";
+import messageRouter from "./routers/message.router.js";
+import groupRouter from "./routers/group.router.js";
+
 import { authMiddleware } from "./middlewares/auth.middleware.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
@@ -175,7 +177,8 @@ app.use(authMiddleware);
 // Routes
 app.use("/api/users", authRouter);
 app.use("/conversations", conversationRouter);
-app.use("/api/messages", messageRoutes);
+app.use("/groups", groupRouter);
+app.use("/api/messages", messageRouter);
 
 // Health route
 app.get("/health", (req, res) => {

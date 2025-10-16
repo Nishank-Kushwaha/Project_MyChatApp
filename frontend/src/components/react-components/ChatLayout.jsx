@@ -8,6 +8,8 @@ import {
   MessageSquare,
   Users,
   User,
+  UserPlus,
+  Crown,
 } from "lucide-react";
 import {
   setConversations,
@@ -34,6 +36,375 @@ import {
   onTyping,
   offTyping,
 } from "../../lib/socket.js";
+
+const ChatMembersManager = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const { activeConversation } = useSelector((state) => state.chat);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [allUsersInfo, setAllUsersInfo] = useState({});
+  const [activeConversationInfo, setActiveConversationInfo] = useState({});
+
+  // ✅ Get current user ID
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/users/me`,
+          {
+            credentials: "include",
+          }
+        );
+        const data = await res.json();
+        setCurrentUserId(data.user?.id || data.user?._id);
+      } catch (error) {
+        console.error("Failed to fetch current user:", error);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  // ✅ Get all users info
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/users/users`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: null }),
+          }
+        );
+        const data = await res.json();
+        setAllUsersInfo(data);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // ✅ Get activeConversation info
+  useEffect(() => {
+    const fetchaActiveConversation = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/groups/details`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ conversationId: activeConversation._id }),
+          }
+        );
+        const data = await res.json();
+        setActiveConversationInfo(data);
+      } catch (error) {
+        console.error("Failed to fetchaActiveConversation:", error);
+      }
+    };
+    fetchaActiveConversation();
+  }, []);
+
+  console.log("✅ activeConversation :", activeConversation);
+  console.log("✅ currentUserId :", currentUserId);
+  console.log("✅ allUsersInfo :", allUsersInfo);
+  console.log("✅ activeConversationInfo :", activeConversationInfo);
+
+  const [members, setMembers] = useState([]);
+
+  useEffect(() => {
+    if (activeConversationInfo?.group?.members) {
+      const formattedMembers = activeConversationInfo.group.members.map(
+        (member) => ({
+          id: member._id,
+          name: member.username,
+          isAdmin: activeConversationInfo.group.admins.some(
+            (admin) => admin._id === member._id
+          ),
+        })
+      );
+      setMembers(formattedMembers);
+    }
+  }, [activeConversationInfo]);
+
+  const [allUsers, setAllUsers] = useState([]);
+
+  useEffect(() => {
+    if (allUsersInfo?.users) {
+      const formattedUsers = allUsersInfo.users.map((user) => ({
+        id: user._id,
+        name: user.username,
+        email: user.email,
+      }));
+
+      setAllUsers(formattedUsers);
+    }
+  }, [activeConversationInfo]);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // API call to add member
+  const handleAddMember = async (user) => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/conversations/members/add/${
+          activeConversation._id
+        }`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id }),
+        }
+      );
+      const data = await res.json();
+
+      console.log("handleAddMember -->", data);
+
+      setMembers([...members, { ...user, isAdmin: false }]);
+      setShowAddModal(false);
+      setSearchTerm("");
+    } catch (error) {}
+  };
+
+  // API call to remove member
+  const handleRemoveMember = async (memberId) => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/conversations/members/delete/${
+          activeConversation._id
+        }`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: memberId }),
+        }
+      );
+      const data = await res.json();
+
+      console.log("handleRemoveMember -->", data);
+
+      setMembers(members.filter((m) => m.id !== memberId));
+    } catch (error) {}
+  };
+
+  const availableUsers = allUsers.filter(
+    (u) =>
+      !members.some((m) => m.id === u.id) &&
+      u.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getInitials = (name) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
+  return (
+    <>
+      {/* Trigger Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="p-2 hover:bg-gray-300 rounded-lg transition-colors group relative"
+        title="Manage members"
+      >
+        <Users className="w-5 h-5 text-gray-700 group-hover:text-gray-900" />
+        <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-semibold">
+          {activeConversation.memberCount}
+        </span>
+      </button>
+
+      {/* Side Panel Modal */}
+      {isOpen && (
+        <div className="fixed inset-0 z-40 flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-transparent bg-opacity-50"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Side Panel */}
+          <div className="ml-auto overflow-y-auto w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-in z-40">
+            {/* Panel Header */}
+            <div className="flex-none border-b px-6 py-4 flex items-center justify-between bg-gray-50">
+              <div className="flex items-center gap-3">
+                <Users className="w-6 h-6 text-blue-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-gray-800">
+                    {activeConversation.name}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {activeConversation.memberCount}{" "}
+                    {activeConversation.memberCount === 1
+                      ? "member"
+                      : "members"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Add Member Button */}
+            {activeConversation.type === "group" && (
+              <div className="flex-none px-6 py-4 border-b">
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <UserPlus className="w-5 h-5" />
+                  Add Member
+                </button>
+              </div>
+            )}
+
+            {/* Members List */}
+            <div className="flex-1 overflow-y-auto scrollbar-custom">
+              <div className="px-6 py-4 space-y-3">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                        {member.avatar || getInitials(member.name)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-800">
+                            {member.name}
+                          </p>
+                          {member.isAdmin && (
+                            <Crown className="w-4 h-4 text-yellow-500" />
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {member.isAdmin ? "Admin" : "Member"}
+                        </p>
+                      </div>
+                    </div>
+                    {activeConversation.type === "group" &&
+                      !member.isAdmin &&
+                      member.id !== currentUserId && (
+                        <button
+                          onClick={() => handleRemoveMember(member.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                          title="Remove member"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-transparent bg-opacity-60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Add Member</h3>
+              <button
+                onClick={() => {
+                  setShowAddModal(false);
+                  setSearchTerm("");
+                }}
+                className="p-1 hover:bg-gray-100 rounded text-black"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {availableUsers.length > 0 ? (
+                availableUsers.map((user) => (
+                  <button
+                    key={user.id}
+                    onClick={() => handleAddMember(user)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white font-semibold">
+                      {user.avatar || getInitials(user.name)}
+                    </div>
+                    <p className="font-medium text-gray-800">{user.name}</p>
+                  </button>
+                ))
+              ) : (
+                <p className="text-center text-gray-500 py-8">
+                  {searchTerm ? "No users found" : "No available users"}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slide-in {
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+        .animate-slide-in {
+          animation: slide-in 0.3s ease-out;
+        }
+
+        /* Custom Scrollbar Styles */
+        .scrollbar-custom {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-track {
+          background: transparent;
+          margin: 8px 0;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.5);
+          border-radius: 10px;
+          border: 2px solid transparent;
+          background-clip: padding-box;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(107, 114, 128, 0.7);
+        }
+      `}</style>
+    </>
+  );
+};
 
 const ConversationList = ({
   conversations,
@@ -455,7 +826,8 @@ const ChatWindow = ({ conversation, currentUserId }) => {
   return (
     <div className="flex flex-col h-full bg-white">
       {/* ✅ Fixed Header */}
-      <div className="flex-none border-b px-6 py-4 flex items-center justify-end bg-gray-200 shadow-sm">
+      <div className="flex-none border-b px-6 py-4 flex items-center justify-between bg-gray-200 shadow-sm">
+        <ChatMembersManager />
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold shadow-md">
             {conversation?.name?.[0]?.toUpperCase() || "C"}

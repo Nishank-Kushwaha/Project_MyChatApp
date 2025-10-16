@@ -8,10 +8,8 @@ const groupSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    description: { type: String },
-    iconUrl: { type: String },
-    inviteCode: { type: String, unique: true },
     admins: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );

@@ -10,14 +10,11 @@ const getAuthToken = () => {
     .split("; ")
     .find((row) => row.startsWith("authorization="));
 
-  console.log("authCookie", authCookie);
-
   if (authCookie) {
     const encodedToken = authCookie.split("=")[1];
     // Decode the URL-encoded token and remove 'Bearer ' prefix
     const decodedToken = decodeURIComponent(encodedToken);
     const finalToken = decodedToken.replace("Bearer ", "").trim();
-    console.log("finalToken", finalToken);
 
     return finalToken;
   }

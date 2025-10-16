@@ -1,6 +1,7 @@
 import Conversation from "../models/Conversation.js";
 import ConversationMember from "../models/ConversationMember.js";
 import User from "../models/User.js";
+import Group from "../models/Group.js";
 
 /*
  * POST body: { userA: "<userId>", userB: "<userId>" }
@@ -106,6 +107,7 @@ const postPrivate = async (req, res) => {
  *
  * Creates a group conversation and adds members.
  */
+
 const postGroup = async (req, res) => {
   try {
     const { name, createdBy, members = [] } = req.body;
@@ -116,17 +118,17 @@ const postGroup = async (req, res) => {
         .json({ message: "name and createdBy are required" });
     }
 
-    // ensure createdBy is in members
+    // ensure creator is in members list
     const uniqueMembers = Array.from(new Set([createdBy, ...(members || [])]));
 
-    // create conversation
+    // create Conversation document
     const conv = await Conversation.create({
       type: "group",
       name,
       createdBy,
     });
 
-    // create ConversationMember docs (creator as admin)
+    // create ConversationMember docs (creator = admin)
     const memberDocs = uniqueMembers.map((u) => ({
       conversationId: conv._id,
       userId: u,
@@ -134,16 +136,25 @@ const postGroup = async (req, res) => {
       joinedAt: new Date(),
     }));
 
-    // insertMany with ordered:false to avoid stopping on duplicates (safe-guard)
     await ConversationMember.insertMany(memberDocs, { ordered: false });
+
+    // create corresponding Group document
+    const group = await Group.create({
+      conversationId: conv._id,
+      admins: [createdBy],
+      members: uniqueMembers,
+    });
 
     const createdMembers = await ConversationMember.find({
       conversationId: conv._id,
-    }).select("userId role joinedAt -_id");
+    })
+      .populate("userId", "username email") // optional: to get full user info
+      .select("userId role joinedAt -_id");
 
     return res.status(201).json({
       message: "Group created",
       conversation: conv,
+      group,
       members: createdMembers,
     });
   } catch (error) {
@@ -155,26 +166,27 @@ const postGroup = async (req, res) => {
 };
 
 /**
- * POST body: { userId: "..." }  -> add member
+ * POST body: { userId: "..." } -> add member
  */
 const postAddMember = async (req, res) => {
   try {
     const { id } = req.params; // conversationId
     const { userId } = req.body;
-
     const authUser = req.user;
 
-    if (authUser) {
+    // fix: should check if authUser is missing, not present
+    if (!authUser) {
       return res
-        .status(400)
+        .status(401)
         .json({ message: "Unauthorized: Missing user info" });
     }
 
     if (!userId) return res.status(400).json({ message: "userId required" });
 
     const conv = await Conversation.findById(id);
-    if (!conv || conv.type !== "group")
+    if (!conv || conv.type !== "group") {
       return res.status(404).json({ message: "Group not found" });
+    }
 
     // Only admin can add
     const isAdmin = await ConversationMember.exists({
@@ -188,18 +200,28 @@ const postAddMember = async (req, res) => {
       conversationId: id,
       userId,
     });
-    if (existing)
+    if (existing) {
       return res.status(400).json({ message: "User already a member" });
+    }
 
+    // Create conversation member
     const member = await ConversationMember.create({
       conversationId: id,
       userId,
       role: "member",
+      joinedAt: new Date(),
     });
+
+    // Update Group members array
+    await Group.findOneAndUpdate(
+      { conversationId: id },
+      { $addToSet: { members: userId } }, // ensures no duplicates
+      { new: true }
+    );
 
     return res.status(201).json({ message: "Member added", member });
   } catch (error) {
-    console.error(error);
+    console.error("Error adding member:", error);
     return res.status(500).json({ message: error.message });
   }
 };
@@ -209,15 +231,24 @@ const postAddMember = async (req, res) => {
  */
 const postDeleteMember = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // conversationId
     const { userId } = req.body;
-
     const authUser = req.user;
 
-    const conv = await Conversation.findById(id);
-    if (!conv)
-      return res.status(404).json({ message: "Conversation not found" });
+    if (!authUser) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Missing user info" });
+    }
 
+    if (!userId) return res.status(400).json({ message: "userId required" });
+
+    const conv = await Conversation.findById(id);
+    if (!conv || conv.type !== "group") {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    // Only admin can remove
     const isAdmin = await ConversationMember.exists({
       conversationId: id,
       userId: authUser.id,
@@ -225,11 +256,19 @@ const postDeleteMember = async (req, res) => {
     });
     if (!isAdmin) return res.status(403).json({ message: "Not authorized" });
 
+    // Remove from ConversationMember
     await ConversationMember.deleteOne({ conversationId: id, userId });
+
+    // Update Group members and admins arrays
+    await Group.findOneAndUpdate(
+      { conversationId: id },
+      { $pull: { members: userId, admins: userId } },
+      { new: true }
+    );
 
     return res.status(200).json({ message: "Member removed" });
   } catch (error) {
-    console.error(error);
+    console.error("Error removing member:", error);
     return res.status(500).json({ message: error.message });
   }
 };

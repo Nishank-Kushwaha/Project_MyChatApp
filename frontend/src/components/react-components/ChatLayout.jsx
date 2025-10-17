@@ -44,6 +44,7 @@ const ChatMembersManager = () => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [allUsersInfo, setAllUsersInfo] = useState({});
   const [activeConversationInfo, setActiveConversationInfo] = useState({});
+  const [currentUserIsAdmin, setCurrentUserIsAdmin] = useState(false);
 
   // ✅ Get current user ID
   useEffect(() => {
@@ -108,13 +109,9 @@ const ChatMembersManager = () => {
     fetchaActiveConversation();
   }, []);
 
-  console.log("✅ activeConversation :", activeConversation);
-  console.log("✅ currentUserId :", currentUserId);
-  console.log("✅ allUsersInfo :", allUsersInfo);
-  console.log("✅ activeConversationInfo :", activeConversationInfo);
-
   const [members, setMembers] = useState([]);
 
+  // ✅ Prepare members list
   useEffect(() => {
     if (activeConversationInfo?.group?.members) {
       const formattedMembers = activeConversationInfo.group.members.map(
@@ -132,6 +129,7 @@ const ChatMembersManager = () => {
 
   const [allUsers, setAllUsers] = useState([]);
 
+  // ✅ Prepare all users list
   useEffect(() => {
     if (allUsersInfo?.users) {
       const formattedUsers = allUsersInfo.users.map((user) => ({
@@ -146,6 +144,16 @@ const ChatMembersManager = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  //✅ compute current user is admin once both are set
+  useEffect(() => {
+    if (!currentUserId || !activeConversationInfo) return;
+    const admins = activeConversationInfo?.group?.admins || [];
+    const isAdmin = admins.some(
+      (a) => a._id === currentUserId || a.id === currentUserId
+    );
+    setCurrentUserIsAdmin(Boolean(isAdmin));
+  }, [currentUserId, activeConversationInfo]);
 
   // API call to add member
   const handleAddMember = async (user) => {
@@ -206,6 +214,12 @@ const ChatMembersManager = () => {
       .join("")
       .toUpperCase();
   };
+
+  console.log("✅ activeConversation :", activeConversation);
+  console.log("✅ currentUserId :", currentUserId);
+  console.log("✅ allUsersInfo :", allUsersInfo);
+  console.log("✅ activeConversationInfo :", activeConversationInfo);
+  console.log("✅ currentUserIsAdmin :", currentUserIsAdmin);
 
   return (
     <>
@@ -295,7 +309,8 @@ const ChatMembersManager = () => {
                         </p>
                       </div>
                     </div>
-                    {activeConversation.type === "group" &&
+                    {currentUserIsAdmin &&
+                      activeConversation.type === "group" &&
                       !member.isAdmin &&
                       member.id !== currentUserId && (
                         <button

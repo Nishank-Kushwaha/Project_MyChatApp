@@ -1,5 +1,13 @@
-import { useState } from "react";
-import { Mail, ArrowRight, Lock, Check, Eye, EyeOff } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Mail,
+  ArrowRight,
+  Lock,
+  Check,
+  Eye,
+  EyeOff,
+  Clock,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
@@ -60,8 +68,31 @@ export default function PasswordResetFlow() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Timer states
+  const [otpData, setOtpData] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [isExpired, setIsExpired] = useState(false);
+
   const otp_generated = generateOTP();
-  // console.log("otp_generated", otp_generated);
+
+  // Timer effect
+  useEffect(() => {
+    if (!otpData || step !== 2) return;
+
+    const timer = setInterval(() => {
+      const remaining = otpData.timeRemaining();
+
+      if (remaining.expired) {
+        setIsExpired(true);
+        clearInterval(timer);
+        setTimeRemaining({ minutes: 0, seconds: 0 });
+      } else {
+        setTimeRemaining(remaining);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [otpData, step]);
 
   const handleEmailSubmit = async () => {
     setError("");
@@ -99,7 +130,8 @@ export default function PasswordResetFlow() {
       const data = await response.json();
 
       if (data.success) {
-        // console.log(`✅ ${data.message}`);
+        setOtpData(otp_generated);
+        setIsExpired(false);
         setStep(2);
       } else {
         setError(`❌ ${data.message}`);
@@ -117,6 +149,11 @@ export default function PasswordResetFlow() {
 
     if (!otp || otp.length !== 6) {
       setError("Please enter a 6-digit OTP");
+      return;
+    }
+
+    if (isExpired) {
+      setError("OTP has expired. Please request a new one.");
       return;
     }
 
@@ -139,7 +176,6 @@ export default function PasswordResetFlow() {
       const data = await response.json();
 
       if (data.success) {
-        // console.log(`✅ ${data.message}`);
         setStep(3);
       } else {
         setError(`❌ ${data.message}`);
@@ -147,6 +183,45 @@ export default function PasswordResetFlow() {
     } catch (error) {
       console.error("Error:", error);
       setError("❌ Failed to verify OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setError("");
+    setOtp("");
+
+    try {
+      setLoading(true);
+      const newOtpData = generateOTP();
+
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/send-mail`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            toEmail: email,
+            name: type === "reset" ? user.username : "User",
+            type: type,
+            otp: newOtpData,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOtpData(newOtpData);
+        setIsExpired(false);
+      } else {
+        setError(`❌ ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setError("❌ Failed to resend OTP");
     } finally {
       setLoading(false);
     }
@@ -183,7 +258,6 @@ export default function PasswordResetFlow() {
         const data = await response.json();
 
         if (data.success) {
-          // console.log(`✅ ${data.message}`);
           setStep(5);
         } else {
           setError(`❌ ${data.message}`);
@@ -217,7 +291,6 @@ export default function PasswordResetFlow() {
         const data = await response.json();
 
         if (data.success) {
-          // console.log(`✅ ${data.message}`);
           setStep(5);
         } else {
           setError(`❌ ${data.message}`);
@@ -319,6 +392,36 @@ export default function PasswordResetFlow() {
             </p>
 
             <div>
+              {/* Timer Display */}
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">
+                    Time Remaining
+                  </span>
+                </div>
+                <div
+                  className={`text-lg font-bold font-mono ${
+                    isExpired
+                      ? "text-red-600"
+                      : timeRemaining && timeRemaining.minutes <= 1
+                      ? "text-orange-600"
+                      : "text-blue-600"
+                  }`}
+                >
+                  {isExpired ? (
+                    <span>Expired</span>
+                  ) : timeRemaining ? (
+                    <span>
+                      {String(timeRemaining.minutes).padStart(2, "0")}:
+                      {String(timeRemaining.seconds).padStart(2, "0")}
+                    </span>
+                  ) : (
+                    <span>--:--</span>
+                  )}
+                </div>
+              </div>
+
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Enter OTP
@@ -332,9 +435,31 @@ export default function PasswordResetFlow() {
                   onKeyPress={(e) => handleKeyPress(e, handleOtpSubmit)}
                   placeholder="000000"
                   maxLength={6}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-center text-2xl tracking-widest font-semibold text-black"
+                  disabled={isExpired}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-center text-2xl tracking-widest font-semibold ${
+                    isExpired
+                      ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
+                      : "text-black border-gray-300"
+                  }`}
                 />
               </div>
+
+              {/* Expiry Warning */}
+              {isExpired && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-sm">
+                  ⚠️ OTP has expired. Please request a new one.
+                </div>
+              )}
+
+              {/* Time Warning */}
+              {!isExpired &&
+                timeRemaining &&
+                timeRemaining.minutes === 0 &&
+                timeRemaining.seconds <= 30 && (
+                  <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-700 text-sm">
+                    ⏱️ OTP expires in {timeRemaining.seconds} seconds
+                  </div>
+                )}
 
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -344,7 +469,7 @@ export default function PasswordResetFlow() {
 
               <button
                 onClick={handleOtpSubmit}
-                disabled={loading}
+                disabled={loading || isExpired || otp.length !== 6}
                 className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -359,10 +484,29 @@ export default function PasswordResetFlow() {
             </div>
 
             <div className="text-center mt-6">
-              <button className="text-sm text-gray-600 hover:text-gray-900">
-                Didn't receive the code?{" "}
-                <span className="text-purple-600 font-medium">Resend</span>
-              </button>
+              {isExpired ? (
+                <button
+                  onClick={handleResendOTP}
+                  className="text-sm text-purple-600 font-medium hover:text-purple-700"
+                >
+                  Click here to request a new OTP
+                </button>
+              ) : (
+                <button
+                  disabled={!isExpired}
+                  className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Didn't receive the code?{" "}
+                  <span className="text-purple-600 font-medium">
+                    Resend in{" "}
+                    {timeRemaining && timeRemaining.minutes >= 1
+                      ? "1 minute"
+                      : timeRemaining?.seconds
+                      ? `${timeRemaining.seconds}s`
+                      : "..."}
+                  </span>
+                </button>
+              )}
             </div>
 
             <button

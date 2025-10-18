@@ -12,6 +12,7 @@ import Logout from "./components/react-components/Logout.jsx";
 import Profile from "./components/react-components/Profile.jsx";
 import PageNotFound from "./components/react-components/PageNotFound.jsx";
 import ChatLayout from "./components/react-components/ChatLayout.jsx";
+import PasswordResetFlow from "./components/react-components/PasswordResetFlow.jsx";
 
 const router = createBrowserRouter([
   {
@@ -37,6 +38,10 @@ const router = createBrowserRouter([
       {
         path: "/profile",
         element: <Profile />,
+      },
+      {
+        path: "/reset-password/:type",
+        element: <PasswordResetFlow />,
       },
       {
         path: "/chat",

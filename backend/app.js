@@ -15,6 +15,7 @@ import authRouter from "./routers/auth.router.js";
 import conversationRouter from "./routers/conversation.router.js";
 import messageRouter from "./routers/message.router.js";
 import groupRouter from "./routers/group.router.js";
+import emailRouter from "./routers/email.router.js";
 
 import { authMiddleware } from "./middlewares/auth.middleware.js";
 
@@ -171,14 +172,14 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Middleware (after Socket.IO setup)
-app.use(authMiddleware);
-
-// Routes
+// Routes (public routes first, then apply auth middleware to protected routes)
 app.use("/api/users", authRouter);
-app.use("/conversations", conversationRouter);
-app.use("/groups", groupRouter);
-app.use("/api/messages", messageRouter);
+app.use("/api", emailRouter);
+
+// Apply auth middleware to protected routes only
+app.use("/conversations", authMiddleware, conversationRouter);
+app.use("/groups", authMiddleware, groupRouter);
+app.use("/api/messages", authMiddleware, messageRouter);
 
 // Health route
 app.get("/health", (req, res) => {

@@ -25,8 +25,8 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    console.log("Email:", email);
-    console.log("Password:", password);
+    // console.log("Email:", email);
+    // console.log("Password:", password);
 
     if (!email || !password) {
       alert("All fields are required");
@@ -43,7 +43,7 @@ export default function LoginPage() {
         { withCredentials: true }
       );
 
-      console.log("Login successfull:", response);
+      // console.log("Login successfull:", response);
       alert(`🎉 ${response.data.message}`);
 
       dispatch(login(response.data.user));

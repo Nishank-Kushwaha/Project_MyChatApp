@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 export default function Profile() {
   const { user, loginStatus } = useSelector((state) => state.user);
 
-  console.log("user me:", user);
+  // console.log("user me:", user);
 
   if (!user) {
     return (

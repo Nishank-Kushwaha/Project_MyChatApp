@@ -22,7 +22,7 @@ function App() {
           { withCredentials: true }
         );
 
-        console.log("fetch session response:", response);
+        // console.log("fetch session response:", response);
 
         if (response.data.user) {
           dispatch(login(response.data.user));

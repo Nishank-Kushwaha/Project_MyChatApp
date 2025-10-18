@@ -22,9 +22,9 @@ export default function RegistrationPage() {
   const handleRegistration = async (e) => {
     e.preventDefault();
 
-    console.log("Username:", username);
-    console.log("Email:", email);
-    console.log("Password:", password);
+    // console.log("Username:", username);
+    // console.log("Email:", email);
+    // console.log("Password:", password);
 
     if (!username || !email || !password) {
       alert("All fields are required");
@@ -42,7 +42,7 @@ export default function RegistrationPage() {
         { withCredentials: true }
       );
 
-      console.log("Registration successfull:", response);
+      // console.log("Registration successfull:", response);
       alert(`🎉 ${response.data.message}`);
     } catch (error) {
       console.error("Error in registration process:", error);

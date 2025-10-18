@@ -33,7 +33,7 @@ export const initSocket = () => {
     return null;
   }
 
-  console.log("token ---------->", token);
+  // console.log("token ---------->", token);
 
   socket = io(socketUrl, {
     path: "/socket.io/",
@@ -96,7 +96,7 @@ export const sendMessage = (data) => {
     return;
   }
   socket.emit("send_message", data);
-  console.log("📤 Sending message via socket:", data);
+  // console.log("📤 Sending message via socket:", data);
 };
 
 export const onNewMessage = (callback) => {

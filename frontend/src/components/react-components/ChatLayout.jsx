@@ -171,7 +171,7 @@ const ChatMembersManager = () => {
       );
       const data = await res.json();
 
-      console.log("handleAddMember -->", data);
+      // console.log("handleAddMember -->", data);
 
       setMembers([...members, { ...user, isAdmin: false }]);
       setShowAddModal(false);
@@ -195,7 +195,7 @@ const ChatMembersManager = () => {
       );
       const data = await res.json();
 
-      console.log("handleRemoveMember -->", data);
+      // console.log("handleRemoveMember -->", data);
 
       setMembers(members.filter((m) => m.id !== memberId));
     } catch (error) {}
@@ -215,11 +215,11 @@ const ChatMembersManager = () => {
       .toUpperCase();
   };
 
-  console.log("✅ activeConversation :", activeConversation);
-  console.log("✅ currentUserId :", currentUserId);
-  console.log("✅ allUsersInfo :", allUsersInfo);
-  console.log("✅ activeConversationInfo :", activeConversationInfo);
-  console.log("✅ currentUserIsAdmin :", currentUserIsAdmin);
+  // console.log("✅ activeConversation :", activeConversation);
+  // console.log("✅ currentUserId :", currentUserId);
+  // console.log("✅ allUsersInfo :", allUsersInfo);
+  // console.log("✅ activeConversationInfo :", activeConversationInfo);
+  // console.log("✅ currentUserIsAdmin :", currentUserIsAdmin);
 
   return (
     <>
@@ -981,7 +981,7 @@ export default function ChatLayout() {
 
     onNewMessage((msg) => {
       if (!msg) return;
-      console.log("📨 New message received:", msg);
+      // console.log("📨 New message received:", msg);
       dispatch(
         addMessage({ conversationId: msg.conversationId, message: msg })
       );
@@ -997,7 +997,7 @@ export default function ChatLayout() {
     (async () => {
       try {
         const res = await fetchConversations();
-        console.log("Fetched conversations:", res);
+        // console.log("Fetched conversations:", res);
         dispatch(setConversations(res.conversations || res || []));
       } catch (error) {
         console.error("Failed to fetch conversations:", error);

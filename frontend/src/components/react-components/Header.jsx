@@ -33,7 +33,7 @@ export default function Header() {
         `${import.meta.env.VITE_BACKEND_URL}/api/users/logout`,
         { withCredentials: true }
       );
-      console.log("Logout successful:", response);
+      // console.log("Logout successful:", response);
       alert(`🎉 ${response.data.message}`);
       dispatch(logout());
       navigate("/");

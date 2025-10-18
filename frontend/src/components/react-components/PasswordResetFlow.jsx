@@ -61,7 +61,7 @@ export default function PasswordResetFlow() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const otp_generated = generateOTP();
-  console.log("otp_generated", otp_generated);
+  // console.log("otp_generated", otp_generated);
 
   const handleEmailSubmit = async () => {
     setError("");
@@ -99,7 +99,7 @@ export default function PasswordResetFlow() {
       const data = await response.json();
 
       if (data.success) {
-        console.log(`✅ ${data.message}`);
+        // console.log(`✅ ${data.message}`);
         setStep(2);
       } else {
         setError(`❌ ${data.message}`);
@@ -139,7 +139,7 @@ export default function PasswordResetFlow() {
       const data = await response.json();
 
       if (data.success) {
-        console.log(`✅ ${data.message}`);
+        // console.log(`✅ ${data.message}`);
         setStep(3);
       } else {
         setError(`❌ ${data.message}`);
@@ -183,7 +183,7 @@ export default function PasswordResetFlow() {
         const data = await response.json();
 
         if (data.success) {
-          console.log(`✅ ${data.message}`);
+          // console.log(`✅ ${data.message}`);
           setStep(5);
         } else {
           setError(`❌ ${data.message}`);
@@ -217,7 +217,7 @@ export default function PasswordResetFlow() {
         const data = await response.json();
 
         if (data.success) {
-          console.log(`✅ ${data.message}`);
+          // console.log(`✅ ${data.message}`);
           setStep(5);
         } else {
           setError(`❌ ${data.message}`);
@@ -291,7 +291,7 @@ export default function PasswordResetFlow() {
             <p className="text-center text-sm text-gray-600 mt-6">
               Remember your password?{" "}
               <a
-                href="#"
+                href="/login"
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 Sign in

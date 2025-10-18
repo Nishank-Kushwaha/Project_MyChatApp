@@ -15,7 +15,7 @@ function page() {
         { withCredentials: true }
       );
 
-      console.log("Logout successfull:", response);
+      // console.log("Logout successfull:", response);
       alert(`🎉 ${response.data.message}`);
 
       dispatch(logout(response.data.data));

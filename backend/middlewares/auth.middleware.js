@@ -1,4 +1,7 @@
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
@@ -20,6 +23,7 @@ export function authMiddleware(req, res, next) {
   const token = cookieAuth.split(" ")[1];
 
   try {
+    console.log("auth middleware : JWT_SECRET : ", JWT_SECRET);
     const decoded = jwt.verify(token, JWT_SECRET);
     console.log("✅ Token verified for:", decoded.email);
 

@@ -33,6 +33,8 @@ export const initSocket = () => {
     return null;
   }
 
+  console.log("token ---------->", token);
+
   socket = io(socketUrl, {
     path: "/socket.io/",
     withCredentials: true,

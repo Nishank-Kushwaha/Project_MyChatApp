@@ -841,8 +841,10 @@ const ChatWindow = ({ conversation, currentUserId }) => {
   return (
     <div className="flex flex-col h-full bg-white">
       {/* ✅ Fixed Header */}
-      <div className="flex-none border-b px-6 py-4 flex items-center justify-between bg-gray-200 shadow-sm">
-        <ChatMembersManager />
+      <div className="flex-none border-b px-6 py-4 flex items-center gap-3 justify-end bg-gray-200 shadow-sm">
+        <div>
+          <ChatMembersManager />
+        </div>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold shadow-md">
             {conversation?.name?.[0]?.toUpperCase() || "C"}

@@ -8,6 +8,9 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 
+// Load environment variables FIRST
+dotenv.config();
+
 import { connect } from "../backend/dbConnect.js";
 import { rootDir } from "./utils/pathUtil.js";
 
@@ -25,7 +28,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 import Message from "./models/Message.js"; // Adjust path as needed
 import Conversation from "./models/Conversation.js";
 
-dotenv.config();
 connect();
 
 const app = express();
@@ -57,20 +59,40 @@ const io = new Server(httpServer, {
   path: "/socket.io/",
 });
 
-// ✅ Socket.IO Authentication Middleware
-io.use(async (socket, next) => {
-  try {
-    const token =
-      socket.handshake.auth.token ||
-      socket.handshake.headers.cookie?.split("token=")[1]?.split(";")[0];
+function getCookieValue(cookieHeader, key) {
+  return cookieHeader
+    ?.split(";")
+    ?.map((c) => c.trim())
+    ?.find((c) => c.startsWith(`${key}=`))
+    ?.split("=")[1];
+}
 
-    if (!token) {
+io.use((socket, next) => {
+  try {
+    // Extract from either auth object or cookies
+    let token =
+      socket.handshake.auth?.token ||
+      getCookieValue(socket.handshake.headers.cookie, "authorization");
+
+    if (!token)
       return next(new Error("Authentication error: No token provided"));
+
+    // Decode URL encoding (for %20 etc.)
+    token = decodeURIComponent(token);
+
+    console.log("token: ", token);
+
+    // Remove "Bearer " prefix if present
+    if (token.startsWith("Bearer ")) {
+      token = token.slice(7);
     }
 
+    console.log("app.js : JWT_SECRET : ", JWT_SECRET);
+
+    // Verify JWT
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    console.log("decoded", decoded);
+    console.log("decoded: ", decoded);
 
     socket.userId = decoded.id || decoded.userId;
     socket.username = decoded.username;
@@ -78,7 +100,7 @@ io.use(async (socket, next) => {
     console.log(`✅ Authenticated socket: ${socket.userId}`);
     next();
   } catch (error) {
-    console.error("Socket auth error:", error.message);
+    console.error("❌ Socket auth error:", error.message);
     next(new Error("Authentication error"));
   }
 });

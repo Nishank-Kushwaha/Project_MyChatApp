@@ -1054,12 +1054,13 @@ export default function ChatLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="relative flex h-screen bg-gray-100">
       {/* Sidebar */}
       <div
         className={`${
           sidebarOpen ? "w-96" : "w-0"
-        } transition-all duration-300 bg-gray-200 border-r flex flex-col overflow-hidden`}
+        } transition-all duration-300 bg-gray-200 border-r flex flex-col overflow-hidden
+      ${sidebarOpen ? "absolute z-50 left-0 top-0 h-full shadow-lg" : ""}`}
       >
         <div className="p-4 border-b flex-shrink-0">
           <div className="flex items-center justify-between mb-4">

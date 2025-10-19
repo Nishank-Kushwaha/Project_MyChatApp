@@ -251,9 +251,11 @@ const ChatMembersManager = () => {
               <div className="flex items-center gap-3">
                 <Users className="w-6 h-6 text-blue-600" />
                 <div>
-                  <h2 className="text-lg font-bold text-gray-800">
-                    {activeConversation.name}
-                  </h2>
+                  {activeConversation.type === "group" && (
+                    <h2 className="text-lg font-bold text-gray-800">
+                      {activeConversation.name}
+                    </h2>
+                  )}
                   <p className="text-sm text-gray-500">
                     {activeConversation.memberCount}{" "}
                     {activeConversation.memberCount === 1
@@ -271,7 +273,7 @@ const ChatMembersManager = () => {
             </div>
 
             {/* Add Member Button */}
-            {activeConversation.type === "group" && (
+            {activeConversation.type === "group" && currentUserIsAdmin && (
               <div className="flex-none px-6 py-4 border-b">
                 <button
                   onClick={() => setShowAddModal(true)}
@@ -284,47 +286,94 @@ const ChatMembersManager = () => {
             )}
 
             {/* Members List */}
-            <div className="flex-1 overflow-y-auto scrollbar-custom">
-              <div className="px-6 py-4 space-y-3">
-                {members.map((member) => (
+            {activeConversation.type === "group" && (
+              <div className="flex-1 overflow-y-auto scrollbar-custom">
+                <div className="px-6 py-4 space-y-3">
+                  {members.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                          {member.avatar || getInitials(member.name)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-gray-800">
+                              {member.name}
+                            </p>
+                            {member.isAdmin && (
+                              <Crown className="w-4 h-4 text-yellow-500" />
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {member.isAdmin ? "Admin" : "Member"}
+                          </p>
+                        </div>
+                      </div>
+                      {currentUserIsAdmin &&
+                        activeConversation.type === "group" &&
+                        !member.isAdmin &&
+                        member.id !== currentUserId && (
+                          <button
+                            onClick={() => handleRemoveMember(member.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                            title="Remove member"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeConversation.type === "private" && (
+              <div className="flex-1 overflow-y-auto scrollbar-custom">
+                <div className="px-6 py-4 space-y-3">
                   <div
-                    key={member.id}
+                    key={activeConversation.id}
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                        {member.avatar || getInitials(member.name)}
+                        {activeConversation?.avatar ||
+                          getInitials(activeConversation.name.split("<->")[0])}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-800">
-                            {member.name}
+                            {activeConversation.name.split("<->")[0]}
                           </p>
-                          {member.isAdmin && (
-                            <Crown className="w-4 h-4 text-yellow-500" />
-                          )}
                         </div>
-                        <p className="text-sm text-gray-500">
-                          {member.isAdmin ? "Admin" : "Member"}
-                        </p>
+                        <p className="text-sm text-gray-500">Member</p>
                       </div>
                     </div>
-                    {currentUserIsAdmin &&
-                      activeConversation.type === "group" &&
-                      !member.isAdmin &&
-                      member.id !== currentUserId && (
-                        <button
-                          onClick={() => handleRemoveMember(member.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                          title="Remove member"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      )}
                   </div>
-                ))}
+                  <div
+                    key={activeConversation.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                        {activeConversation?.avatar ||
+                          getInitials(activeConversation.name.split("<->")[1])}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-800">
+                            {activeConversation.name.split("<->")[1]}
+                          </p>
+                        </div>
+                        <p className="text-sm text-gray-500">Member</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -745,7 +794,7 @@ const NewChatModal = ({ isOpen, onClose, onCreateChat }) => {
   );
 };
 
-const ChatWindow = ({ conversation, currentUserId }) => {
+const ChatWindow = ({ conversation, currentUserId, currentUserName }) => {
   const dispatch = useDispatch();
   const messages = useSelector(
     (state) => state.chat.messages[conversation?._id] || []
@@ -838,6 +887,20 @@ const ChatWindow = ({ conversation, currentUserId }) => {
       </div>
     );
 
+  // 🧠 Get the current username in lowercase for matching
+  const current = currentUserName?.toLowerCase();
+
+  // 🧩 Determine display name (for private chats)
+  let displayName = conversation.name;
+  if (conversation.type === "private" && conversation.name?.includes("<->")) {
+    const [first, second] = conversation.name.split("<->");
+    if (first === current) displayName = second;
+    else if (second === current) displayName = first;
+  }
+
+  // 🧩 Avatar letter (first letter of display name)
+  const avatarLetter = displayName?.[0]?.toUpperCase() || "C";
+
   return (
     <div className="flex flex-col h-full bg-white">
       {/* ✅ Fixed Header */}
@@ -847,11 +910,11 @@ const ChatWindow = ({ conversation, currentUserId }) => {
         </div>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold shadow-md">
-            {conversation?.name?.[0]?.toUpperCase() || "C"}
+            {avatarLetter}
           </div>
           <div>
             <h2 className="font-semibold text-gray-900 text-lg tracking-tight">
-              {conversation?.name || "Conversation"}
+              {displayName}
             </h2>
             <p className="text-xs text-gray-500">Active chat</p>
           </div>
@@ -1117,6 +1180,7 @@ export default function ChatLayout() {
         <ChatWindow
           conversation={activeConversation}
           currentUserId={currentUserId}
+          currentUserName={currentUserName}
         />
       </div>
 

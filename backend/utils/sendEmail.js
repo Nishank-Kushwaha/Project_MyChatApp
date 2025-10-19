@@ -277,7 +277,7 @@ export const sendVerificationEmail = async (toEmail, name, type, otp) => {
       timestamp: new Date(),
     };
   } catch (error) {
-    console.error("❌ Error sending verification email:", error.message);
+    console.error("❌ Error sending verification email:", error);
     return {
       success: false,
       message: error.message,

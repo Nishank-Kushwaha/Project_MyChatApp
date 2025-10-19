@@ -1,5 +1,5 @@
 import User from "../models/User.js";
-import ConversationMember from "../models/conversationMember.js";
+import ConversationMember from "../models/ConversationMember.js";
 import OTP from "../models/OTP.js";
 import { signToken } from "../utils/auth.js";
 

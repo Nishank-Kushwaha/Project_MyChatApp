@@ -92,7 +92,7 @@ const postSignIn = async (req, res) => {
     res.cookie("authorization", rawToken, {
       httpOnly: true, // ✅ JavaScript cannot access
       secure: true, // ✅ Only over HTTPS (Render requirement)
-      sameSite: "lax", // ✅ CSRF protection
+      sameSite: "none", // ✅ CHANGED: "none" for cross-domain
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -118,9 +118,9 @@ const getLogout = async (req, res) => {
   try {
     // ✅ Clear the httpOnly cookie
     res.clearCookie("authorization", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
+      httpOnly: true, // ✅ JavaScript cannot access
+      secure: true, // ✅ Only over HTTPS (Render requirement)
+      sameSite: "none", // ✅ CHANGED: "none" for cross-domain
       path: "/",
     });
 

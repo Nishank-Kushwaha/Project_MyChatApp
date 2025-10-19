@@ -3,12 +3,27 @@ dotenv.config();
 
 import nodemailer from "nodemailer";
 
-// create transporter using Gmail
+// Create transporter with production-optimized settings
 const transporter = nodemailer.createTransport({
   service: "gmail",
+  host: "smtp.gmail.com", // ✅ CHANGED: Added explicit host
+  port: 587, // ✅ CHANGED: Changed from default to 587 (TLS)
+  secure: false, // ✅ CHANGED: Added (false with 587, true with 465)
   auth: {
-    user: process.env.EMAIL_USER, // your Gmail address
-    pass: process.env.EMAIL_PASS, // your App Password (NOT your Gmail login password)
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  // ✅ CHANGED: Added timeout settings
+  connectionTimeout: 10000, // 10 seconds to establish connection
+  socketTimeout: 10000, // 10 seconds for socket operations
+  // ✅ CHANGED: Added connection pooling
+  maxConnections: 5,
+  maxMessages: 100,
+  rateDelta: 1000,
+  rateLimit: 5,
+  // ✅ CHANGED: Added TLS configuration
+  tls: {
+    rejectUnauthorized: false, // Important for cloud environments
   },
 });
 

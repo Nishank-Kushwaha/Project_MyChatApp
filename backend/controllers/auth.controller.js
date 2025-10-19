@@ -88,12 +88,11 @@ const postSignIn = async (req, res) => {
       username: loggedInUser.username,
     });
 
-    const bearerToken = `Bearer ${rawToken}`;
-
-    res.cookie("authorization", bearerToken, {
-      // httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+    // ✅ Set httpOnly cookie - browser sends it automatically
+    res.cookie("authorization", rawToken, {
+      httpOnly: true, // ✅ JavaScript cannot access
+      secure: true, // ✅ Only over HTTPS (Render requirement)
+      sameSite: "lax", // ✅ CSRF protection
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -117,9 +116,10 @@ const postSignIn = async (req, res) => {
 
 const getLogout = async (req, res) => {
   try {
+    // ✅ Clear the httpOnly cookie
     res.clearCookie("authorization", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       path: "/",
     });

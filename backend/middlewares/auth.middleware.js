@@ -7,20 +7,18 @@ const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
 export function authMiddleware(req, res, next) {
   // Get token from cookies
-  let cookieAuth = req.cookies?.authorization;
+  let token = req.cookies?.authorization;
 
-  if (cookieAuth) {
-    cookieAuth = decodeURIComponent(cookieAuth);
+  if (token) {
+    token = decodeURIComponent(token);
   }
 
-  console.log("🔑 Auth token:", cookieAuth ? "Present" : "Missing");
+  console.log("🔑 Auth token:", token ? "Present" : "Missing");
 
-  if (!cookieAuth || !cookieAuth.startsWith("Bearer ")) {
+  if (!token) {
     console.log("🚫 No valid auth token");
-    return res.status(401).json({ message: "Authentication required" });
+    return res.status(401).json({ message: "No token provided" });
   }
-
-  const token = cookieAuth.split(" ")[1];
 
   try {
     console.log("auth middleware : JWT_SECRET : ", JWT_SECRET);

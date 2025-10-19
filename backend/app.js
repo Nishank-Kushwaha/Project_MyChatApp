@@ -35,8 +35,8 @@ const app = express();
 // CORS setup for both HTTP & Socket.IO
 app.use(
   cors({
-    origin: [process.env.FRONTEND_URL],
-    credentials: true,
+    origin: process.env.FRONTEND_URL,
+    credentials: true, // ✅ CRITICAL: allow credentials
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -54,45 +54,39 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.FRONTEND_URL,
-    credentials: true,
+    credentials: true, // ✅ CRITICAL: allow credentials
   },
   path: "/socket.io/",
 });
 
-function getCookieValue(cookieHeader, key) {
-  return cookieHeader
-    ?.split(";")
-    ?.map((c) => c.trim())
-    ?.find((c) => c.startsWith(`${key}=`))
-    ?.split("=")[1];
-}
-
+// server.js - Socket.IO middleware
 io.use((socket, next) => {
   try {
-    // Extract from either auth object or cookies
-    let token =
-      socket.handshake.auth?.token ||
-      getCookieValue(socket.handshake.headers.cookie, "authorization");
+    // ✅ Cookies are auto-sent by browser - extract from headers
+    const cookieHeader = socket.handshake.headers.cookie;
 
-    if (!token)
-      return next(new Error("Authentication error: No token provided"));
+    if (!cookieHeader) {
+      return next(new Error("Authentication error: No cookies provided"));
+    }
 
-    // Decode URL encoding (for %20 etc.)
-    token = decodeURIComponent(token);
+    // Extract 'authorization' cookie value
+    const match = cookieHeader.match(/authorization=([^;]*)/);
+    if (!match) {
+      return next(new Error("Authentication error: No authorization cookie"));
+    }
 
-    console.log("token: ", token);
+    let token = decodeURIComponent(match[1]);
 
-    // Remove "Bearer " prefix if present
+    // ✅ NO MORE Bearer prefix since httpOnly tokens are sent raw
+    // If you were including it, remove it here:
     if (token.startsWith("Bearer ")) {
       token = token.slice(7);
     }
 
-    console.log("app.js : JWT_SECRET : ", JWT_SECRET);
+    console.log("🔐 Token extracted from httpOnly cookie");
 
     // Verify JWT
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    console.log("decoded: ", decoded);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "supersecret");
 
     socket.userId = decoded.id || decoded.userId;
     socket.username = decoded.username;

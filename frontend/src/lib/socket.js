@@ -3,49 +3,23 @@ import { io } from "socket.io-client";
 
 let socket;
 
-// ✅ Get auth token from cookies
-const getAuthToken = () => {
-  // Try to find 'authorization' cookie first
-  const authCookie = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("authorization="));
-
-  if (authCookie) {
-    const encodedToken = authCookie.split("=")[1];
-    // Decode the URL-encoded token and remove 'Bearer ' prefix
-    const decodedToken = decodeURIComponent(encodedToken);
-    const finalToken = decodedToken.replace("Bearer ", "").trim();
-
-    return finalToken;
-  }
-
-  return null;
-};
-
 export const initSocket = () => {
   if (socket?.connected) return socket;
 
   const socketUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-  const token = getAuthToken();
-
-  if (!token) {
-    console.error("❌ No auth token found. Cannot connect to socket.");
-    return null;
-  }
-
-  // console.log("token ---------->", token);
 
   socket = io(socketUrl, {
     path: "/socket.io/",
-    withCredentials: true,
-    auth: {
-      token: token, // ✅ Pass token for authentication
-    },
+    withCredentials: true, // ✅ CRITICAL: send cookies
     transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    pingInterval: 25000,
+    pingTimeout: 20000,
     autoConnect: true,
+    // ❌ REMOVE: auth object is no longer needed for token
   });
 
   socket.on("connect", () => {

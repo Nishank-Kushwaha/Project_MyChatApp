@@ -129,3 +129,89 @@ export const searchUsers = async (query) => {
   }
   return data;
 };
+
+const api = axios.create({
+  baseURL: `${API_BASE}/api/notifications`,
+  withCredentials: true,
+});
+
+// ============================================================
+// 1️⃣ GET ALL NOTIFICATIONS
+// ============================================================
+export const getAllNotifications = async (
+  userId,
+  { limit = 20, skip = 0, unreadOnly = false, type } = {}
+) => {
+  try {
+    const params = new URLSearchParams();
+    params.append("limit", limit);
+    params.append("skip", skip);
+    params.append("unreadOnly", unreadOnly);
+    if (type) params.append("type", type);
+
+    const res = await api.get(`/user/${userId}?${params.toString()}`);
+    if (!res.data.success) {
+      console.error("Failed to get all notifications", res);
+      throw new Error(res || "Failed to get all notifications");
+    }
+    return res;
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    throw error.response?.data || error.message;
+  }
+};
+
+// ============================================================
+// 2️⃣ MARK AS READ FOR CONVERSATION
+// ============================================================
+export const markAsReadForConversation_api = async (userId, conversationId) => {
+  try {
+    const res = await api.put(
+      `/user/${userId}/conversation/${conversationId}/read`
+    );
+    if (!res.data.success) {
+      console.error("Failed to mark as read for conversation", res);
+      throw new Error(res || "Failed to mark as read for conversation");
+    }
+    return res;
+  } catch (error) {
+    console.error("Error marking as read for conversation:", error);
+    throw error.response?.data || error.message;
+  }
+};
+
+// ============================================================
+// 5️⃣ MARK AS READ
+// ============================================================
+export const markAsRead_api = async (userId, notificationId) => {
+  try {
+    const res = await api.put(
+      `/user/${userId}/notification/${notificationId}/read`
+    );
+    if (!res.data.success) {
+      console.error("Failed to mark as read", res);
+      throw new Error(res || "Failed to mark as read");
+    }
+    return res;
+  } catch (error) {
+    console.error("Error marking as read:", error);
+    throw error.response?.data || error.message;
+  }
+};
+
+// ============================================================
+// 8️⃣ DELETE ALL READ
+// ============================================================
+export const deleteAllRead = async (userId) => {
+  try {
+    const res = await api.delete(`/user/${userId}/delete-all-read`);
+    if (!res.data.success) {
+      console.error("Failed to delete all read", res);
+      throw new Error(res || "Failed to delete all read");
+    }
+    return res;
+  } catch (error) {
+    console.error("Error deleting read notifications:", error);
+    throw error.response?.data || error.message;
+  }
+};

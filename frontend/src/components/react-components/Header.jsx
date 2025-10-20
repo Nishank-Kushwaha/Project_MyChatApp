@@ -5,6 +5,8 @@ import axios from "axios";
 import { MessageCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 
+import Notifications from "./Notification.jsx";
+
 export default function Header() {
   const user = useSelector((state) => state.user.user);
   const isAuthenticated = useSelector((state) => state.user.loginStatus);
@@ -57,6 +59,7 @@ export default function Header() {
           <nav className="flex items-center gap-6">
             {isAuthenticated ? (
               <>
+                <Notifications />
                 <Link
                   to="/chat"
                   className="text-gray-300 hover:text-white text-sm"

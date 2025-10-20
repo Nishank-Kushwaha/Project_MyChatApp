@@ -19,6 +19,7 @@ import conversationRouter from "./routers/conversation.router.js";
 import messageRouter from "./routers/message.router.js";
 import groupRouter from "./routers/group.router.js";
 import emailRouter from "./routers/email.router.js";
+import notificationRouter from "./routers/notification.router.js";
 
 import { authMiddleware } from "./middlewares/auth.middleware.js";
 
@@ -27,6 +28,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 // Import your Message model
 import Message from "./models/Message.js"; // Adjust path as needed
 import Conversation from "./models/Conversation.js";
+import ConversationMember from "./models/ConversationMember.js";
+import Notification from "./models/Notification.js";
 
 connect();
 
@@ -125,15 +128,16 @@ io.on("connection", (socket) => {
         return;
       }
 
-      // Get all connected sockets in the room
+      // 1️⃣ Get connected clients in this room
       const clients = await io.in(conversationId).fetchSockets();
+      const connectedUserIds = clients.map((s) => s.userId.toString());
 
-      // Get userIds of all connected users (except sender)
+      // 2️⃣ Save message to database
       const readBy = clients
-        .map((s) => s.userId)
+        .map((s) => s.userId.toString())
         .filter((id) => id !== socket.userId);
 
-      // Save message to database
+      // 3️⃣ Update conversation's last message
       const newMessage = await Message.create({
         conversationId,
         senderId: socket.userId,
@@ -141,7 +145,10 @@ io.on("connection", (socket) => {
         readBy, // ✅ all connected users except sender
       });
 
-      // Update last message info in conversation
+      // Populate sender info
+      await newMessage.populate("senderId", "username email");
+
+      // 3️⃣ Update conversation's last message
       const updatedConversation = await Conversation.findByIdAndUpdate(
         conversationId,
         {
@@ -151,10 +158,46 @@ io.on("connection", (socket) => {
         { new: true } // returns updated doc
       );
 
-      // Populate sender info if needed
-      await newMessage.populate("senderId", "username email");
+      // 4️⃣ Get all conversation members using ConversationMember model
+      const members = await ConversationMember.find({
+        conversationId,
+      }).populate("userId", "_id username email");
 
-      // Broadcast to all users in the conversation (including sender)
+      // 5️⃣ Create notifications for OFFLINE users only
+      for (const member of members) {
+        const participantId = member.userId._id.toString();
+        console.log("participantId -->", participantId);
+        // Skip sender
+        if (participantId === socket.userId) {
+          console.log(`⏭️ Skipping sender: ${participantId}`);
+          continue;
+        }
+
+        // Check if user is online
+        const isOnline = connectedUserIds.includes(participantId);
+
+        console.log(
+          `${isOnline ? "✅ Online" : "📬 Offline"}: ${member.userId.username}`
+        );
+
+        // Create notification only for offline users
+        if (!isOnline) {
+          const notification = await Notification.create({
+            recipient: participantId,
+            sender: socket.userId,
+            type: "message",
+            conversationId,
+            messageId: newMessage._id,
+            content: content.substring(0, 100),
+          });
+
+          console.log(
+            `📬 Notification created for offline user: ${member.userId.username}`
+          );
+        }
+      }
+
+      // 6️⃣ Broadcast message to ALL connected users in conversation room
       io.to(conversationId).emit("new_message", {
         _id: newMessage._id,
         conversationId: newMessage.conversationId,
@@ -196,6 +239,7 @@ app.use("/api", emailRouter);
 app.use("/conversations", authMiddleware, conversationRouter);
 app.use("/groups", authMiddleware, groupRouter);
 app.use("/api/messages", authMiddleware, messageRouter);
+app.use("/api/notifications", authMiddleware, notificationRouter);
 
 // Health route
 app.get("/health", (req, res) => {

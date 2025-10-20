@@ -24,6 +24,7 @@ import {
   createPrivateChat,
   createGroupChat,
   searchUsers,
+  markAsReadForConversation_api,
 } from "../../lib/api.js";
 import {
   initSocket,
@@ -36,6 +37,7 @@ import {
   onTyping,
   offTyping,
 } from "../../lib/socket.js";
+import { markAsReadForConversation } from "../../redux/slices/notificationSlice.js";
 
 const ChatMembersManager = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -475,6 +477,7 @@ const ConversationList = ({
   activeId,
   onSelect,
   currentUserName,
+  currentUserId,
 }) => (
   <div className="space-y-1">
     {conversations.length === 0 ? (
@@ -498,11 +501,16 @@ const ConversationList = ({
 
         // 🧩 Avatar letter (first letter of display name)
         const avatarLetter = displayName?.[0]?.toUpperCase() || "C";
+        const dispatch = useDispatch();
 
         return (
           <div
             key={c._id}
-            onClick={() => onSelect(c)}
+            onClick={() => {
+              onSelect(c);
+              markAsReadForConversation_api(currentUserId, c._id);
+              dispatch(markAsReadForConversation(c._id));
+            }}
             className={`p-3 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors ${
               activeId === c._id ? "bg-blue-50 border-l-4 border-blue-500" : ""
             }`}
@@ -1163,6 +1171,7 @@ export default function ChatLayout() {
             activeId={activeConversation?._id}
             onSelect={(c) => dispatch(setActiveConversation(c))}
             currentUserName={currentUserName}
+            currentUserId={currentUserId}
           />
         </div>
       </div>

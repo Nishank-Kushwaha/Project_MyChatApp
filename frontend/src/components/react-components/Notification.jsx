@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import {
   getAllNotifications,
-  markAsRead_api,
   deleteAllRead,
   markAsReadForConversation_api,
 } from "../../lib/api.js";
@@ -45,10 +44,9 @@ export default function Notifications() {
   // ✅ When a notification is clicked
   const handleNotificationClick = async (notifyId, conversation) => {
     try {
-      const res = await markAsRead_api(user.id, notifyId);
+      const res = markAsReadForConversation_api(user.id, conversation._id);
       console.log("response in mark as read:", res);
       dispatch(setActiveConversation(conversation));
-      markAsReadForConversation_api(user.id, conversation._id);
       dispatch(markAsReadForConversation(conversation._id));
       setSeeNotify(false);
     } catch (error) {

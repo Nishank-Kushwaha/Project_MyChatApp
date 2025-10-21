@@ -7,7 +7,12 @@ A real-time chat app with JWT authentication, Socket.IO messaging, and modern UI
 - 🔐 **JWT Authentication** - Login/register with secure cookies
 - 💬 **Real-time Messaging** - Instant chat with Socket.IO
 - 👥 **Group & Private Chats** - Multiple conversation types
-- 📧 **Email Integration** - User notifications
+- 📧 **Email Integration** - OTP verification via Nodemailer
+- 🔑 **Password Recovery** - Forgot & reset password with OTP
+- 👤 **User Profiles** - Detailed profile pages with account info
+- 🔍 **User Search** - Find users by username or email
+- 🔔 **Notification System** - Real-time alerts with unread counts
+- ⏱️ **OTP Timer** - Real-time countdown with expiry warnings
 - 🎨 **Modern UI** - Responsive design with animations
 - 🔒 **Secure** - Password hashing and protected routes
 
@@ -24,11 +29,13 @@ A real-time chat app with JWT authentication, Socket.IO messaging, and modern UI
 ### Frontend  
 - **React 19** + **Vite** - UI framework & build tool
 - **Redux Toolkit** - State management
-- **React Router** - Navigation
+- **React Router** - Navigation with dynamic routes
 - **Socket.IO Client** - Real-time connection
-- **Tailwind CSS** - Styling
+- **Tailwind CSS** - Styling framework
 - **Framer Motion** - Animations
-- **Radix UI** - UI components
+- **Radix UI** - Accessible UI components
+- **Lucide React** - Modern icon library
+- **Cobe** - 3D globe visualization
 
 ## Quick Start
 
@@ -48,6 +55,12 @@ JWT_SECRET=your_secret_key
 MONGO_URI=mongodb://localhost:27017/chatapp
 FRONTEND_URL=http://localhost:5173
 NODE_ENV=development
+
+# Email Configuration (for OTP)
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
 ```
 
 Start server:
@@ -76,15 +89,28 @@ npm run build  # Production build
 ## API Endpoints
 
 ### Authentication
-- `POST /api/users/signup` - Register user
-- `POST /api/users/signin` - Login user  
+- `POST /api/users/register` - Register user
+- `POST /api/users/login` - Login user  
 - `GET /api/users/logout` - Logout user
 - `GET /api/users/me` - Get current user
+- `GET /api/users/search` - Search users by username/email
+
+### Password Management
+- `POST /api/send-mail` - Send OTP via email
+- `POST /api/users/verify-otp` - Verify OTP code
+- `POST /api/users/reset-password` - Reset with old password
+- `POST /api/users/reset-password-otp` - Reset with OTP
 
 ### Conversations
 - `GET /api/conversations` - Get user conversations
 - `POST /api/conversations` - Create conversation
 - `GET /api/conversations/:id/messages` - Get messages
+
+### Notifications
+- `GET /notifications/user/:userId` - Get user notifications
+- `PUT /notifications/user/:userId/conversation/:conversationId/read` - Mark conversation notifications as read
+- `PUT /notifications/user/:userId/notification/:notificationId/read` - Mark single notification as read
+- `DELETE /notifications/user/:userId/delete-all-read` - Delete all read notifications
 
 ### Real-time Events
 - `join_conversation` - Join chat room
@@ -123,6 +149,50 @@ frontend/
 - `MONGO_URI` - MongoDB connection
 - `FRONTEND_URL` - CORS origin
 - `NODE_ENV` - Environment mode
+- `EMAIL_USER` - SMTP email address
+- `EMAIL_PASS` - SMTP password/app password
+- `EMAIL_HOST` - SMTP server host
+- `EMAIL_PORT` - SMTP server port
 
 **Frontend:**
 - `VITE_BACKEND_URL` - API base URL
+
+## Key Features Overview
+
+### Password Recovery System
+- **Forgot Password**: Email-based OTP verification
+- **Reset Password**: Change password with current password
+- **OTP Management**: 6-digit codes with 5-minute expiry
+- **Real-time Timer**: Visual countdown with expiry warnings
+- **Secure Flow**: Multi-step verification process
+
+### User Profile Management
+- **Detailed Profiles**: Avatar, stats, account info
+- **Account Settings**: Password reset, security options
+- **User Statistics**: Conversation count, join date
+- **Responsive Design**: Mobile-friendly profile pages
+
+### Email Integration
+- **Nodemailer Setup**: SMTP email delivery
+- **OTP Templates**: Professional email templates
+- **Multiple Types**: Support for forgot/reset flows
+- **Validation**: Email format and delivery verification
+
+### Notification System
+- **Real-time Alerts**: Instant notifications for new messages
+- **Unread Counter**: Badge showing unread notification count
+- **Multiple Types**: Message, mention, and system notifications
+- **Read Status**: Track read/unread state with visual indicators
+- **Bulk Actions**: Mark all as read, delete read notifications
+- **Conversation Linking**: Click notifications to jump to conversations
+- **Auto Cleanup**: Automatic deletion of read notifications
+
+## Application Routes
+
+- `/` - Home page
+- `/login` - User login
+- `/register` - User registration  
+- `/profile` - User profile page
+- `/chat` - Main chat interface
+- `/reset-password/forgot` - Forgot password flow
+- `/reset-password/reset` - Reset password flow

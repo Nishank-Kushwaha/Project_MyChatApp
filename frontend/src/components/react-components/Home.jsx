@@ -20,7 +20,7 @@ export default function Home() {
 
         {/* CTA Button */}
         <Link
-          to={loginStatus ? "/profile" : "/login"}
+          to={loginStatus ? "/chat" : "/login"}
           className="group px-8 py-4 bg-white text-black rounded-full font-semibold hover:scale-105 transition-all duration-300 flex items-center gap-2"
         >
           Get Started

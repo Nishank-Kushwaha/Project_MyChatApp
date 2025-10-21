@@ -72,24 +72,30 @@ export default function Header() {
                   to="/profile"
                   className="flex items-center gap-2 text-gray-300 hover:text-white text-sm transition-colors"
                 >
-                  <Avatar className="w-10 h-10">
-                    {user?.avatarUrl ? (
-                      <AvatarImage src={user.avatarUrl} alt={user.username} />
-                    ) : (
-                      <AvatarFallback
-                        className={`${getAvatarColor(
-                          user.username
-                        )} text-white font-semibold`}
-                      >
-                        {user?.username
-                          ?.split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <span>{user?.username}</span>
+                  <div className="flex items-center gap-2">
+                    <Avatar className="w-10 h-10">
+                      {user?.avatarUrl ? (
+                        <AvatarImage src={user.avatarUrl} alt={user.username} />
+                      ) : (
+                        <AvatarFallback
+                          className={`${getAvatarColor(
+                            user.username
+                          )} text-white font-semibold`}
+                        >
+                          {user?.username
+                            ?.split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+
+                    {/* Username — hidden on small screens */}
+                    <span className="hidden sm:inline font-medium text-white">
+                      {user?.username}
+                    </span>
+                  </div>
                 </Link>
 
                 <button

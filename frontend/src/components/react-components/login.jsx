@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -34,6 +35,8 @@ export default function LoginPage() {
     }
 
     try {
+      setLoading(true);
+
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/users/login`,
         {
@@ -52,6 +55,8 @@ export default function LoginPage() {
     } catch (error) {
       console.error("Error in Login process:", error);
       alert(`⚠️ ${error.response?.data?.message}`);
+    } finally {
+      setLoading(false);
     }
 
     setEmail("");
@@ -109,7 +114,11 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex-col gap-2">
           <RainbowButton type="submit" className="w-full" form="login-form">
-            Login
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-blue-800 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>Login</>
+            )}
           </RainbowButton>
         </CardFooter>
       </Card>

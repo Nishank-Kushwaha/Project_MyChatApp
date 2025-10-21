@@ -18,6 +18,7 @@ export default function RegistrationPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleRegistration = async (e) => {
     e.preventDefault();
@@ -32,6 +33,8 @@ export default function RegistrationPage() {
     }
 
     try {
+      setLoading(true);
+
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/users/register`,
         {
@@ -47,6 +50,8 @@ export default function RegistrationPage() {
     } catch (error) {
       console.error("Error in registration process:", error);
       alert(`⚠️ ${error.response?.data?.message}`);
+    } finally {
+      setLoading(false);
     }
 
     setUsername("");
@@ -114,7 +119,11 @@ export default function RegistrationPage() {
             className="w-full"
             form="registration-form"
           >
-            Register
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-blue-800 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>Register</>
+            )}
           </RainbowButton>
         </CardFooter>
       </Card>

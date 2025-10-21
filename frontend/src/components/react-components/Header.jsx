@@ -6,12 +6,15 @@ import { MessageCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 
 import Notifications from "./Notification.jsx";
+import { useState } from "react";
 
 export default function Header() {
   const user = useSelector((state) => state.user.user);
   const isAuthenticated = useSelector((state) => state.user.loginStatus);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(false);
 
   function getAvatarColor(username = "") {
     const colors = [
@@ -31,6 +34,8 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
+      setLoading(true);
+
       const response = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/users/logout`,
         { withCredentials: true }
@@ -41,6 +46,8 @@ export default function Header() {
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,7 +109,11 @@ export default function Header() {
                   onClick={handleLogout}
                   className="text-gray-300 hover:text-red-400 text-sm"
                 >
-                  Logout
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>Logout</>
+                  )}
                 </button>
               </>
             ) : (

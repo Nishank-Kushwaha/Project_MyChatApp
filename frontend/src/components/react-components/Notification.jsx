@@ -21,16 +21,33 @@ export default function Notifications() {
   const dispatch = useDispatch();
   const [seeNotify, setSeeNotify] = useState(false);
 
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const limit = 10;
+
   // ✅ Define fetchNotifications first
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (nextPage = 0) => {
     try {
+      const skip = nextPage * limit;
       const res = await getAllNotifications(user.id, {
-        limit: 20,
-        skip: 0,
-        unreadOnly: true,
+        limit,
+        skip,
+        unreadOnly: false, // show all (you can toggle)
       });
-      console.log("response in fetch notifications:", res.data.data);
-      dispatch(setNotifications(res.data.data.notifications));
+
+      const data = res.data.data;
+      console.log("response in fetch notifications:", data);
+
+      if (nextPage === 0) {
+        // first load
+        dispatch(setNotifications(data.notifications));
+      } else {
+        // append more
+        dispatch(setNotifications([...notifications, ...data.notifications]));
+      }
+
+      setHasMore(data.hasMore);
+      setPage(nextPage);
     } catch (error) {
       console.log("Error fetching notifications:", error);
     }
@@ -38,7 +55,7 @@ export default function Notifications() {
 
   // ✅ Fetch when component loads or user changes
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(0);
   }, [user.id, dispatch]);
 
   // ✅ When a notification is clicked
@@ -92,7 +109,15 @@ export default function Notifications() {
       </button>
 
       {seeNotify && (
-        <div className="absolute mt-2 w-72 bg-white shadow-lg rounded-xl p-2 max-h-80 overflow-y-auto border border-gray-200 z-50">
+        <div
+          className="absolute mt-2 w-72 bg-white shadow-lg rounded-xl p-2 max-h-80 overflow-y-auto border border-gray-200 z-50"
+          onScroll={(e) => {
+            const { scrollTop, scrollHeight, clientHeight } = e.target;
+            if (scrollTop + clientHeight >= scrollHeight - 10 && hasMore) {
+              fetchNotifications(page + 1);
+            }
+          }}
+        >
           {notifications.length === 0 ? (
             <p className="text-gray-500 text-sm text-center">
               No notifications yet
@@ -125,6 +150,11 @@ export default function Notifications() {
                 </div>
               </div>
             ))
+          )}
+          {hasMore && (
+            <p className="text-center text-gray-400 text-xs py-1">
+              Loading more...
+            </p>
           )}
         </div>
       )}

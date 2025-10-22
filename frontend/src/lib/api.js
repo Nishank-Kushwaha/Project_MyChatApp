@@ -98,7 +98,7 @@ export const removeGroupMember = async (conversationId, userId) => {
 };
 
 // Messages (these will use Socket.IO for real-time, but keep REST as fallback)
-export const fetchMessages = async (conversationId, page = 1, limit = 50) => {
+export const fetchMessages = async (conversationId, page = 1, limit = 10) => {
   const res = await fetch(
     `${API_BASE}/api/messages/${conversationId}?page=${page}&limit=${limit}`,
     { headers: headers(), credentials: "include" }

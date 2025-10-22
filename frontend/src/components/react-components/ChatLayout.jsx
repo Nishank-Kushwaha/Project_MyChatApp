@@ -17,6 +17,7 @@ import {
   setMessages,
   addMessage,
   addConversation,
+  prependMessages,
 } from "../../redux/slices/chatSlice.js";
 import {
   fetchConversations,
@@ -813,12 +814,19 @@ const ChatWindow = ({ conversation, currentUserId, currentUserName }) => {
 
   const messagesEndRef = useRef(null);
 
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const chatContainerRef = useRef(null);
+  const isFetchingRef = useRef(false); // prevent multiple calls
+
   useEffect(() => {
     if (!conversation) return;
 
     (async () => {
       try {
-        const res = await fetchMessages(conversation._id);
+        setPage(1);
+        setHasMore(true);
+        const res = await fetchMessages(conversation._id, 1);
         dispatch(
           setMessages({
             conversationId: conversation._id,
@@ -882,6 +890,48 @@ const ChatWindow = ({ conversation, currentUserId, currentUserName }) => {
     }
   };
 
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = async () => {
+      if (container.scrollTop === 0 && hasMore && !isFetchingRef.current) {
+        isFetchingRef.current = true;
+        const previousHeight = container.scrollHeight;
+
+        try {
+          const nextPage = page + 1;
+          const res = await fetchMessages(conversation._id, nextPage);
+          if (!res.messages || res.messages.length === 0) {
+            setHasMore(false);
+          } else {
+            // Prepend older messages
+            dispatch(
+              prependMessages({
+                conversationId: conversation._id,
+                messages: res.messages,
+              })
+            );
+            setPage(nextPage);
+
+            // Maintain scroll position (no jump)
+            setTimeout(() => {
+              const newHeight = container.scrollHeight;
+              container.scrollTop = newHeight - previousHeight;
+            }, 0);
+          }
+        } catch (err) {
+          console.error("Error loading older messages:", err);
+        } finally {
+          isFetchingRef.current = false;
+        }
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [page, hasMore, conversation, dispatch]);
+
   if (!conversation)
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50">
@@ -930,7 +980,10 @@ const ChatWindow = ({ conversation, currentUserId, currentUserName }) => {
       </div>
 
       {/* ✅ Scrollable message list */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50 space-y-4">
+      <div
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50 space-y-4"
+      >
         {messages.length === 0 ? (
           <div className="text-center text-gray-400 mt-8">
             <p>No messages yet. Start the conversation!</p>

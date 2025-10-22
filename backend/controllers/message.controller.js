@@ -25,11 +25,13 @@ const getMessages = async (req, res) => {
 
     // ✅ Fetch messages
     const messages = await Message.find({ conversationId })
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("senderId", "username email") // optional
       .lean();
+
+    messages.reverse(); // show oldest first in chat order
 
     // ✅ Get total count for pagination
     const totalMessages = await Message.countDocuments({ conversationId });

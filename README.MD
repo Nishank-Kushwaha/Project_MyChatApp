@@ -12,6 +12,7 @@ A real-time chat app with JWT authentication, Socket.IO messaging, and modern UI
 - 👤 **User Profiles** - Detailed profile pages with account info
 - 🔍 **User Search** - Find users by username or email
 - 🔔 **Notification System** - Real-time alerts with unread counts
+- 📄 **Smart Pagination** - Efficient loading for messages and notifications
 - ⏱️ **OTP Timer** - Real-time countdown with expiry warnings
 - 🎨 **Modern UI** - Responsive design with animations
 - 🔒 **Secure** - Password hashing and protected routes
@@ -104,10 +105,10 @@ npm run build  # Production build
 ### Conversations
 - `GET /api/conversations` - Get user conversations
 - `POST /api/conversations` - Create conversation
-- `GET /api/conversations/:id/messages` - Get messages
+- `GET /api/conversations/:id/messages?page=1&limit=20` - Get messages with pagination
 
 ### Notifications
-- `GET /notifications/user/:userId` - Get user notifications
+- `GET /notifications/user/:userId?page=1&limit=20` - Get user notifications with pagination
 - `PUT /notifications/user/:userId/conversation/:conversationId/read` - Mark conversation notifications as read
 - `PUT /notifications/user/:userId/notification/:notificationId/read` - Mark single notification as read
 - `DELETE /notifications/user/:userId/delete-all-read` - Delete all read notifications
@@ -186,6 +187,14 @@ frontend/
 - **Bulk Actions**: Mark all as read, delete read notifications
 - **Conversation Linking**: Click notifications to jump to conversations
 - **Auto Cleanup**: Automatic deletion of read notifications
+
+### Pagination System
+- **Message Pagination**: Load chat messages in chunks for better performance
+- **Notification Pagination**: Fetch notifications with configurable page size
+- **Optimized Loading**: Reduce initial load time and memory usage
+- **Scroll-based Navigation**: Seamless infinite scroll experience
+- **Flexible Parameters**: Customizable page size and offset controls
+- **Future Ready**: Conversation list pagination support ready for implementation
 
 ## Application Routes
 

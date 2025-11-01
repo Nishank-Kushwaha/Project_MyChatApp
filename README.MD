@@ -34,9 +34,8 @@ A real-time chat app with JWT authentication, Socket.IO messaging, and modern UI
 - **Socket.IO Client** - Real-time connection
 - **Tailwind CSS** - Styling framework
 - **Framer Motion** - Animations
-- **Radix UI** - Accessible UI components
+- **Magic UI** - Accessible UI components
 - **Lucide React** - Modern icon library
-- **Cobe** - 3D globe visualization
 
 ## Quick Start
 
